@@ -15,3 +15,10 @@ corrupted_test.json.corrupt
 .env
 .env.*
 !.env.example
+
+# Test and temporary files
+.pytest_cache/
+*.tmp
+*.corrupt
+*.bak
+budget_app.py.backup

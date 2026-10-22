@@ -1,47 +1,57 @@
 # AskThili Budget Tracker 💰
 
-A Python-based budget tracking application built with Streamlit. Track income and expenses, monitor your balance, review transaction history, and generate simple financial reports through a web interface.
+A Python budget-tracking application built with Streamlit. Record income and expenses, monitor balances, set category budgets, generate reports, and import transactions from CSV statements.
 
-## 🚀 Live Demo
+## Live Demo
 
-**[Open AskThili Budget Tracker](https://askthili-budget-tracker-bnkrjfetywxjhmdvkg2z3z.streamlit.app/)**
+[Open AskThili Budget Tracker](https://askthili-budget-tracker-bnkrjfetywxjhmdvkg2z3z.streamlit.app/)
 
-## ✨ Features
+## Features
 
-- **Income and expense tracking** — record transactions by date, amount, and category.
-- **Balance summary** — view your current account balance.
-- **Transaction history** — review recorded transactions in a table.
-- **Financial reports** — view monthly net totals and spending by category.
-- **Data persistence** — save and load account data using JSON.
-- **Input validation and error handling** — handle invalid transaction inputs and budget-related errors.
-- **Interactive web interface** — use a Streamlit sidebar form to add transactions.
+- **Income and expense tracking:** Record transactions with dates, amounts, categories, and descriptions.
+- **Balance calculation:** Calculate the account balance using decimal arithmetic.
+- **Budget controls:** Set category spending limits and apply overdraft protection.
+- **Financial reports:** Review monthly totals, category spending, and top expenses.
+- **Recurring transactions:** Generate weekly or monthly transaction occurrences.
+- **CSV statement import:** Validate statement data and report malformed rows.
+- **Background imports:** Track import status, progress, results, and errors safely.
+- **Data persistence:** Save and load budget data using JSON, with additional Supabase storage integration in the application.
+- **Error handling:** Handle invalid transactions, budget violations, and corrupted local save files.
+- **Automated tests:** Test core functionality and important failure cases using pytest.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Language:** Python
 - **Web framework:** Streamlit
-- **Data storage:** JSON file
-- **Date and money handling:** Python `datetime` and `Decimal`
+- **Database integration:** Supabase
+- **Local persistence:** JSON
+- **Money handling:** `decimal.Decimal`
+- **Date handling:** Python `datetime`
+- **Testing:** pytest
 - **Version control:** Git and GitHub
 - **Deployment:** Streamlit Community Cloud
 
-## 📂 Project Structure
+## Project Structure
 
 ```text
 learnfast/
 ├── budget_app.py
 ├── budget_tracker.ipynb
 ├── requirements.txt
+├── tests/
+│   └── test_budget.py
 └── mybudget/
     ├── __init__.py
-    ├── transaction.py
     ├── account.py
-    ├── reports.py
     ├── exceptions.py
-    └── storage.py
+    ├── importer.py
+    ├── reports.py
+    ├── storage.py
+    ├── supabase_storage.py
+    └── transaction.py
 ```
 
-## 💻 Run Locally
+## Run Locally
 
 ### 1. Clone the repository
 
@@ -56,7 +66,7 @@ cd askthili-budget-tracker
 python -m venv .venv
 ```
 
-Activate it on Windows PowerShell:
+Activate it in Windows PowerShell:
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
@@ -68,39 +78,31 @@ Activate it on Windows PowerShell:
 python -m pip install -r requirements.txt
 ```
 
-### 4. Start the application
+### 4. Configure environment variables
 
-```bash
+Create a local `.env` file containing the Supabase settings required by the application. Obtain your own credentials from your Supabase project settings. Never commit `.env` or expose secret keys publicly.
+
+### 5. Run the app
+
+```powershell
 python -m streamlit run budget_app.py
 ```
 
-Open the local URL displayed in your terminal, usually `http://localhost:8501`.
+Open the local address displayed in the terminal, usually `http://localhost:8501`.
 
-## 🧪 Testing
+## Run Automated Tests
 
-The project has been developed incrementally, with tests and manual checks for transaction validation, balance calculations, JSON persistence, transaction history, and report selection.
+From the project root, with the virtual environment activated:
 
-## 🔒 Data Storage Note
+```powershell
+python -m pytest -v
+```
 
-The application uses a JSON file for persistence. Local files on hosted platforms may not be permanent across restarts or redeployments. A database-backed storage solution would be a future improvement.
+The current test suite contains 12 tests covering transactions, balances, overdraft protection, budget limits, save/load behavior, corrupt-file recovery, CSV parsing, background imports, and recurring transactions.
 
-Avoid entering sensitive financial information into this demo.
+## Design Notes
 
-## 🔮 Future Improvements
-
-- Monthly budget limits and spending alerts
-- Visual charts for income and expenses
-- CSV import and export
-- Improved automated test coverage
-- Database-backed persistent storage
-- More detailed reporting and filtering
-
-## 👨‍💻 Author
-
-**Manish Chaudhary**
-
-GitHub: [@manishchaudhary5761](https://github.com/manishchaudhary5761)
-
----
-
-*Built as a hands-on Python learning project to practice object-oriented programming, exception handling, data persistence, reporting, and web application deployment.*
+- **`Transaction` and `RecurringTransaction`:** A recurring transaction extends the regular transaction model with a frequency and occurrence-generation behavior.
+- **`Report`:** A shared report abstraction allows different report types to use a consistent interface.
+- **`ImportJob`:** Keeps background import status, progress, results, and errors in a thread-safe object instead of having a worker thread directly modify Streamlit session state.
+-
