@@ -18,6 +18,7 @@ from mybudget import (
     load,
     save,
 )
+from mybudget.supabase_storage import add_transactions, load_transactions
 
 SAVE_PATH = os.environ.get("THILIBUDGET_SAVE", "budget.json")
 
@@ -29,16 +30,25 @@ REPORTS = {
 st.set_page_config(page_title="Budget Tracker", page_icon="💰")
 st.title("Budget Tracker")
 
-# Keep the account available when Streamlit reruns the app.
+
+# Load the account once per Streamlit session.
 if "account" not in st.session_state:
-    result = load(SAVE_PATH)
-    st.session_state.account = result.account
-    st.session_state.load_problems = result.problems
+    try:
+        cloud_transactions = load_transactions()
+
+        account = Account()
+        account.add_many(cloud_transactions, enforce_limits=False)
+
+        st.session_state.account = account
+        st.session_state.load_problems = []
+        st.session_state.supabase_ready = True
+
+    except Exception as exc:
+        st.error(f"Could not load transactions from Supabase: {exc}")
+        st.stop()
 
 account: Account = st.session_state.account
 
-for problem in st.session_state.get("load_problems", []):
-    st.warning(problem)
 
 with st.sidebar:
     st.header("Add a transaction")
@@ -50,11 +60,13 @@ with st.sidebar:
         category = st.text_input("Category", placeholder="groceries")
         description = st.text_input("Description")
         repeat = st.selectbox("Repeats", ["no", "weekly", "monthly"])
+
         until = (
             st.date_input("Repeat until", dt.date.today())
             if repeat != "no"
             else None
         )
+
         submitted = st.form_submit_button("Add")
 
     if submitted:
@@ -80,12 +92,32 @@ with st.sidebar:
                     frequency=repeat,
                 )
 
+            # Add and validate transactions before saving them.
             added = account.add(transaction, until=until)
+
+            # Insert only this new batch, never the entire account.
+            try:
+                add_transactions(added)
+            except Exception:
+                # Roll back this batch in memory if cloud saving fails.
+                added_ids = {id(item) for item in added}
+                account._transactions = [
+                    item
+                    for item in account._transactions
+                    if id(item) not in added_ids
+                ]
+                raise
+
+            # Keep a local JSON copy as a backup.
             save(account, SAVE_PATH)
+
             st.success(f"Added {len(added)} transaction(s).")
 
-        except (BudgetError, ValueError, TypeError) as exc:
+        except (BudgetError, ValueError, TypeError, RuntimeError) as exc:
             st.error(str(exc))
+        except Exception as exc:
+            st.error(f"Could not save the transaction: {exc}")
+
 
 st.subheader("Account Summary")
 st.metric("Balance", f"{account.balance:,.2f}")

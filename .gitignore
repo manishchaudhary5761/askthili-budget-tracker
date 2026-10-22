@@ -10,3 +10,8 @@ backup_test.json
 budget_test.json
 partial_test.json
 corrupted_test.json.corrupt
+
+# Private credentials
+.env
+.env.*
+!.env.example
